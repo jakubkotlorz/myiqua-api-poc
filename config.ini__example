@@ -1,0 +1,10 @@
+[auth]
+user = youremail@mail.com
+password = asdfasdf234234
+
+[device]
+id = 1a1a1a1a-2b2b-3c3c-4d4d-xyxyxyxyxyxy
+
+[polling]
+min_minutes = 10
+max_minutes = 20
