@@ -1,5 +1,4 @@
 import requests
-import datetime
 import logging
 import random
 import time
@@ -11,8 +10,8 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s\t%(message)s",
     handlers=[
-        logging.StreamHandler(),                 # stdout
-        logging.FileHandler("water.log", "a", "utf-8")  # plik
+        logging.StreamHandler(),
+        logging.FileHandler("water.log", "a", "utf-8")
     ]
 )
 
