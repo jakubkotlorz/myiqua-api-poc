@@ -45,16 +45,9 @@ def get_data(token, device_id):
     return r.json()
 
 
-def main():
-
+def load_config(config_file):
     config = configparser.ConfigParser()
-    config.read("config.ini")
-    username = config["auth"]["user"]
-    password = config["auth"]["password"]
-    device_id = config["device"]["id"]
-    MIN_SEC = 60 * config.getint("polling", "min_minutes", fallback=10)
-    MAX_SEC = 60 * config.getint("polling", "max_minutes", fallback=20)
-
+    config.read(config_file)
     required = [
         ("auth", "user"),
         ("auth", "password"),
@@ -62,7 +55,23 @@ def main():
     ]        
     for section, key in required:
         if key not in config[section]:
-            raise RuntimeError(f"Missing config: [{section}] {key}")
+            raise RuntimeError(f"Missing config: {section}-{key}")
+    username = config["auth"]["user"]
+    password = config["auth"]["password"]
+    device_id = config["device"]["id"]
+    min_sec = 60 * config.getint("polling", "min_minutes", fallback=10)
+    max_sec = 60 * config.getint("polling", "max_minutes", fallback=20)
+    if min_sec > max_sec:
+        raise ValueError(f"MAX time ({max_sec}) must be greater than MIN time ({min_sec})!")
+    return username, password, device_id, min_sec, max_sec
+
+
+def main():
+    try:
+        username, password, device_id, min_sec, max_sec = load_config("config.ini")
+    except Exception as e:
+        logging.error(f"Configuration error: {e}")
+        sys.exit(4)
 
     token = None
     while True:
@@ -77,7 +86,7 @@ def main():
             water_usage = data["device"]["properties"]["gallons_used_today"]["converted_value"]
             logging.info(f"Water usage: {water_usage}\tUpdated: {water_updated}")
 
-            sleep_time = random.uniform(MIN_SEC, MAX_SEC)
+            sleep_time = random.uniform(min_sec, max_sec)
 
         except requests.exceptions.HTTPError as e:
             status = e.response.status_code
