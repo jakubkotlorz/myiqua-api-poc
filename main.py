@@ -16,33 +16,59 @@ logging.basicConfig(
 )
 
 
-BASE_URL = "https://api.myiquaapp.com/v1"
+class IquaApi:
+    BASE_URL = "https://api.myiquaapp.com/v1"
 
-def login(email, password):
-    LOGIN_ENDPOINT = "/auth/login"
-    url = BASE_URL + LOGIN_ENDPOINT
-    payload = {
-        "email": email,
-        "password": password
-    }
-    r = requests.post(url, json=payload, timeout=20)
-    r.raise_for_status()
-    data = r.json()
-    return data["access_token"]
+    def __init__(self, email: str, passw: str, dev_id: str):
+        self._email = email
+        self._password = passw
+        self._device_id = dev_id
+        self._token = None
 
+    def get_device_data(self) -> dict:
+        max_attempts = 2
+        for attempt in range(max_attempts):
+            if self._token is None:
+                self._login()
+            try:
+                return self._fetch_data()
+            except requests.exceptions.HTTPError as e:
+                status = e.response.status_code
+                if status == 401 and attempt < max_attempts-1:
+                    logging.warning("Token expired, re-authenticating")
+                    self._token = None
+                    continue
+                else:
+                    logging.error(f"HTTP {status}: {e.response.text}")
+                    raise
+            except requests.exceptions.RequestException as e:
+                logging.error(f"Network error: {e}")
+                raise
 
-def get_data(token, device_id):
-    DATA_ENDPOINT = f"/devices/{device_id}/detail-or-summary"
-    url = BASE_URL + DATA_ENDPOINT
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "User-Agent": "iqua-water-poller/0.1",
-    }
-    r = requests.get(url, headers=headers, timeout=20)
-    # remaining = int(r.headers.get("x-ratelimit-remaining", 0))
-    # reset_at = r.headers.get("x-ratelimit-reset")
-    r.raise_for_status()
-    return r.json()
+    def _login(self):
+        LOGIN_ENDPOINT = "/auth/login"
+        payload = {
+            "email": self._email,
+            "password": self._password,
+        }
+        r = requests.post(IquaApi.BASE_URL + LOGIN_ENDPOINT, json=payload, timeout=20)
+        r.raise_for_status()
+        data = r.json()
+        self._token = data["access_token"]
+        logging.info(f"Logged in, token acquired ({self._token[:10]}...)")
+
+    def _fetch_data(self) -> dict:
+        DATA_ENDPOINT = f"/devices/{self._device_id}/detail-or-summary"
+        url = IquaApi.BASE_URL + DATA_ENDPOINT
+        headers = {
+            "Authorization": f"Bearer {self._token}",
+            "User-Agent": "iqua-water-poller/0.1",
+        }
+        r = requests.get(url, headers=headers, timeout=20)
+        # remaining = int(r.headers.get("x-ratelimit-remaining", 0))
+        # reset_at = r.headers.get("x-ratelimit-reset")
+        r.raise_for_status()
+        return r.json()
 
 
 def load_config(config_file):
@@ -71,43 +97,24 @@ def main():
         username, password, device_id, min_sec, max_sec = load_config("config.ini")
     except Exception as e:
         logging.error(f"Configuration error: {e}")
-        sys.exit(4)
+        sys.exit(1)
 
-    token = None
+    api = IquaApi(username, password, device_id)
     while True:
         try:
-            if token is None:
-                token = login(username, password)
-                logging.info(f"Logged in, token acquired ({token[:10]}...)")
-
-            data = get_data(token, device_id)
-
-            water_updated = data["device"]["properties"]["gallons_used_today"]["updated_at"]
-            water_usage = data["device"]["properties"]["gallons_used_today"]["converted_value"]
-            logging.info(f"Water usage: {water_usage}\tUpdated: {water_updated}")
-
-            sleep_time = random.uniform(min_sec, max_sec)
-
-        except requests.exceptions.HTTPError as e:
-            status = e.response.status_code
-            logging.error(f"HTTP {status}: {e.response.text}")
-
-            if status == 401:
-                logging.warning("Token expired, re-authenticating")
-                token = None
-                continue
-            else:
-                logging.error(f"HTTP error: {status}, {e}")
-                sys.exit(1)
-
-        except requests.exceptions.RequestException as e:
-            logging.error(f"Network error: {e}")
-            sys.exit(2)
-
+            data = api.get_device_data()
+            if data:
+                water_updated = data["device"]["properties"]["gallons_used_today"]["updated_at"]
+                water_usage = data["device"]["properties"]["gallons_used_today"]["converted_value"]
+                logging.info(f"Water usage: {water_usage}\tUpdated: {water_updated}")
         except KeyError as e:
             logging.error(f"JSON error: {e}")
             sys.exit(3)
-        
+        except Exception as e:
+            logging.error(f"API error: {e}")
+            sys.exit(2)
+
+        sleep_time = random.uniform(min_sec, max_sec)
         time.sleep(sleep_time)
 
 
