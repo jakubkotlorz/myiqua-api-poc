@@ -1,8 +1,9 @@
+import aiohttp
+import asyncio
+import configparser
 import logging
 import random
-import time
 import sys
-import configparser
 from iqua_api import IquaApi
 
 
@@ -37,31 +38,32 @@ def load_config(config_file):
     return username, password, device_id, min_sec, max_sec
 
 
-def main():
+async def main():
     try:
         username, password, device_id, min_sec, max_sec = load_config("config.ini")
     except Exception as e:
         logging.error(f"Configuration error: {e}")
         sys.exit(1)
 
-    api = IquaApi(username, password, device_id)
-    while True:
-        try:
-            data = api.get_device_data()
-            if data:
-                water_updated = data["device"]["properties"]["gallons_used_today"]["updated_at"]
-                water_usage = data["device"]["properties"]["gallons_used_today"]["converted_value"]
-                logging.info(f"Water usage: {water_usage}\tUpdated: {water_updated}")
-        except KeyError as e:
-            logging.error(f"JSON error: {e}")
-            sys.exit(3)
-        except Exception as e:
-            logging.error(f"API error: {e}")
-            sys.exit(2)
+    async with aiohttp.ClientSession() as session:
+        api = IquaApi(session, username, password, device_id)
+        while True:
+            try:
+                data = await api.get_device_data()
+                if data:
+                    water_updated = data["device"]["properties"]["gallons_used_today"]["updated_at"]
+                    water_usage = data["device"]["properties"]["gallons_used_today"]["converted_value"]
+                    logging.info(f"Water usage: {water_usage}\tUpdated: {water_updated}")
+            except KeyError as e:
+                logging.error(f"JSON error: {e}")
+                sys.exit(3)
+            except Exception as e:
+                logging.error(f"API error: {e}")
+                sys.exit(2)
 
-        sleep_time = random.uniform(min_sec, max_sec)
-        time.sleep(sleep_time)
+            sleep_time = random.uniform(min_sec, max_sec)
+            await asyncio.sleep(sleep_time)
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
