@@ -3,7 +3,7 @@ import aiohttp
 import asyncio
 from unittest.mock import patch, Mock
 
-from iqua_api import IquaApi
+from core.iqua_api import IquaApi
 
 
 pytestmark = pytest.mark.asyncio

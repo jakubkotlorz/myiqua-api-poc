@@ -4,7 +4,7 @@ import configparser
 import logging
 import random
 import sys
-from iqua_api import IquaApi
+from core.iqua_api import IquaApi
 
 
 logging.basicConfig(

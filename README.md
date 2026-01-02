@@ -33,6 +33,25 @@ This project was created as:
 6. Optionally adjust the polling interval  
    (avoid very low values to stay within API rate limits).
 
+### Development
+
+#### Running the standalone client
+
+The standalone client can be run locally for development and debugging
+without Home Assistant. From the project root:
+
+```bash
+python -m standalone.main
+```
+
+#### Running tests
+
+Tests are executed using pytest. From the project root:
+```bash
+python -m pytest
+```
+
+
 ### Notes
 
 This project is intended as a local proof-of-concept and learning reference.
