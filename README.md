@@ -55,3 +55,8 @@ python -m pytest
 ### Notes
 
 This project is intended as a local proof-of-concept and learning reference.
+
+Work in progress Home Assistant integration for MyIqua water softeners. 
+
+Standalone client is kept for development and debugging.
+

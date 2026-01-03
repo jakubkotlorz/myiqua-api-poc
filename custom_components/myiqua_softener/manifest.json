@@ -1,0 +1,8 @@
+{
+  "domain": "myiqua_softener",
+  "name": "MyIqua Softener",
+  "version": "0.1.0",
+  "documentation": "https://github.com/jakubkotlorz/myiqua-api-poc",
+  "codeowners": ["@jakubkotlorz"],
+  "requirements": []
+}
