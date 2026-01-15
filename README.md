@@ -30,7 +30,7 @@ This project was created as:
    - your account password
    - the device ID obtained above
 
-6. Optionally adjust the polling interval  
+6. Optionally adjust the polling interval
    (avoid very low values to stay within API rate limits).
 
 ### Development

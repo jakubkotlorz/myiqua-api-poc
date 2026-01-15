@@ -1,2 +1,1 @@
 DOMAIN = "myiqua_softener"
-    

@@ -4,12 +4,11 @@ from datetime import timedelta
 import asyncio
 import logging
 
-from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class MyIquaSoftenerCoordinator:
+class PollingCoordinator:
     def __init__(self, api, update_interval: float):
         self.api = api
         self._update_interval = update_interval
@@ -21,12 +20,12 @@ class MyIquaSoftenerCoordinator:
         if self._task:
             return
 
-        _LOGGER.info("Starting MyIquaSoftenerCoordinator")
+        _LOGGER.info("Starting PollingCoordinator")
         self._stopped = False
         self._task = asyncio.create_task(self._run())
 
     async def stop(self):
-        _LOGGER.info("Stopping MyIquaSoftenerCoordinator")
+        _LOGGER.info("Stopping PollingCoordinator")
         self._stopped = True
         if self._task:
             self._task.cancel()
