@@ -25,6 +25,7 @@ class MyIquaSoftenerDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         try:
+            _LOGGER.debug("Fetching data from MyIqua API...")
             return await self.api.get_device_data()
         except Exception as err:
             raise UpdateFailed(f"MyIqua API error: {err}") from err

@@ -10,10 +10,16 @@ class MyIquaSoftenerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     async def async_step_user(self, user_input=None):
+        errors = {}
+
         if user_input is not None:
             return self.async_create_entry(
-                title="MyIqua Softener",
-                data=user_input,
+                title=user_input["email"],
+                data={
+                    "email": user_input["email"],
+                    "password": user_input["password"],
+                    "device_id": user_input["device_id"],
+                },
             )
 
         schema = vol.Schema(
@@ -27,4 +33,8 @@ class MyIquaSoftenerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user",
             data_schema=schema,
+            errors=errors,
         )
+
+    async def async_step_import(self, user_input=None):
+        return self.async_abort(reason="not_supported")
