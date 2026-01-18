@@ -1,6 +1,7 @@
 import logging
 from datetime import timedelta
-
+from aiohttp import ClientResponseError
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
     UpdateFailed,
@@ -27,5 +28,14 @@ class MyIquaSoftenerDataUpdateCoordinator(DataUpdateCoordinator):
         try:
             _LOGGER.debug("Fetching data from MyIqua API...")
             return await self.api.get_device_data()
+
+        except ClientResponseError as err:
+            if err.status in (401, 403):
+                raise ConfigEntryAuthFailed from err
+
+            raise UpdateFailed(
+                f"MyIqua API HTTP error {err.status}"
+            ) from err
+
         except Exception as err:
-            raise UpdateFailed(f"MyIqua API error: {err}") from err
+            raise UpdateFailed(f"MyIqua communication error: {err}") from err
